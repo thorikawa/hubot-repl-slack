@@ -4,6 +4,9 @@
   "private": true,
   "author": "Takahiro Poly Horikawa <horikawa.takahiro@gmail.com>",
   "description": "An example bot using Repl-AI",
+  "engines": {
+    "node": "5.x"
+  },
   "dependencies": {
     "hubot": "^2.18.0",
     "hubot-diagnostics": "0.0.1",
@@ -17,9 +20,8 @@
     "hubot-rules": "^0.1.1",
     "hubot-scripts": "^2.16.2",
     "hubot-shipit": "^0.2.0",
-    "hubot-slack": "^3.4.2"
-  },
-  "engines": {
-    "node": "0.10.x"
+    "hubot-slack": "^3.4.2",
+    "moment": "^2.13.0",
+    "request": "^2.72.0"
   }
 }
