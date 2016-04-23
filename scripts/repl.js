@@ -13,8 +13,6 @@ let replUserIdMap = {};
 let recvTimeMap = {};
 let initTalkingFlagMap = {};
 
-request.debug = true;
-
 function register(callback) {
 	let body = {
 		botId: REPL_BOT_ID
@@ -29,10 +27,16 @@ function register(callback) {
 	};
 	request(options, (err, res, json) => {
 		console.log(err, json);
-		let userId = json.appUserId;
-		if (callback) {
-			callback(err, userId);
+		if (err) {
+			callback(err);
+			return;
 		}
+		if (json.error) {
+			callback(json.error);
+			return;
+		}
+		let userId = json.appUserId;
+		callback(err, userId);
 	});
 }
 
@@ -40,8 +44,7 @@ function now() {
 	return moment().format("YYYY-MM-DD HH:mm:ss");
 }
 
-function dialogue(replUserId, msg, callback) {
-	let input = msg.message.rawText;
+function dialogue(replUserId, input, callback) {
 	let initTalkingFlag;
 	
 	if (replUserId in initTalkingFlagMap) {
@@ -71,25 +74,42 @@ function dialogue(replUserId, msg, callback) {
 	};
 	request(options, (err, res, json) => {
 		console.log(err, json);
-		let output = json.systemText.expression;
-		if (callback) {
-			callback(err, output);
+		if (err) {
+			callback(err);
+			return;
 		}
+		if (json.error) {
+			callback(json.error);
+			return;
+		}
+		let output = json.systemText.expression;
+		callback(err, output);
 	});
 }
 
 module.exports = (robot) => {
 	robot.respond(/(\S+)/i, function(msg) {
 		let name = msg.message.user.name;
+		let message = msg.message.text;
+		message = message.replace(/\@[a-zA-Z\.\-\_;:\<\>]+/g, '')
+		console.log(`received "${message}" from @$name`);
 		if (name in replUserIdMap) {
-			dialogue(replUserIdMap[name], msg, (err, output) => {
-				msg.send(output);
+			dialogue(replUserIdMap[name], message, (err, output) => {
+				if (err) {
+					msg.send(`error: ${err}`);
+				} else {
+					msg.send(output);
+				}
 			});
 		} else {
 			register((err, replUserId) => {
 				replUserIdMap[name] = replUserId;
-				dialogue(replUserIdMap[name], msg, (err, output) => {
-					msg.send(output);
+				dialogue(replUserIdMap[name], message, (err, output) => {
+					if (err) {
+						msg.send(`error: ${err}`);
+					} else {
+						msg.send(output);
+					}
 				});
 			});
 		}
