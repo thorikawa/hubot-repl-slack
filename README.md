@@ -1,3 +1,5 @@
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+
 # repl-hubot
 
 repl-hubot is a chat bot built on the [Hubot][hubot] framework. It was
