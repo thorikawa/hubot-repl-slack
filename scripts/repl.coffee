@@ -19,12 +19,10 @@ REPL_TOPIC_ID = process.env.HUBOT_REPL_TOPIC_ID
 REGISTRATION_URL = 'https://api.repl-ai.jp/v1/registration'
 DIALOGUE_URL = 'https://api.repl-ai.jp/v1/dialogue'
 
-
 class ReplEngine
 
   constructor: (@robot) ->
     @replUserIdMap = {}
-    @initTalkingFlagMap = {}
 
   now: () ->
     moment().format("YYYY-MM-DD HH:mm:ss")
@@ -56,17 +54,11 @@ class ReplEngine
       callback err, userId
 
   dialogue: (replUserId, input, callback) ->
-    if replUserId of @initTalkingFlagMap
-      initTalkingFlag = false
-    else
-      initTalkingFlag = true
-      @initTalkingFlagMap[replUserId] = 1
-
     body =
       appUserId: replUserId
       botId: REPL_BOT_ID
       voiceText: input
-      initTalkingFlag: initTalkingFlag
+      initTalkingFlag: input == 'init'
       initTopicId: REPL_TOPIC_ID
       appRecvTime: @now()
       appSendTime: @now()
