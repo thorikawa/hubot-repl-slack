@@ -1,7 +1,7 @@
 'use strict';
 
 const request = require('request'),
-      moment = require("moment");
+      moment = require('moment');
 const REPL_API_KEY = process.env.REPL_API_KEY;
 const REPL_BOT_ID = process.env.REPL_BOT_ID;
 const REPL_TOPIC_ID = process.env.REPL_TOPIC_ID;
@@ -10,8 +10,11 @@ const REGISTRATION_URL = 'https://api.repl-ai.jp/v1/registration';
 const DIALOGUE_URL = 'https://api.repl-ai.jp/v1/dialogue';
 
 let replUserIdMap = {};
-let recvTimeMap = {};
 let initTalkingFlagMap = {};
+
+function now() {
+	return moment().format("YYYY-MM-DD HH:mm:ss");
+}
 
 function register(callback) {
 	let body = {
@@ -26,7 +29,7 @@ function register(callback) {
 		json: body
 	};
 	request(options, (err, res, json) => {
-		console.log(err, json);
+		// console.log(err, json);
 		if (err) {
 			callback(err);
 			return;
@@ -38,10 +41,6 @@ function register(callback) {
 		let userId = json.appUserId;
 		callback(err, userId);
 	});
-}
-
-function now() {
-	return moment().format("YYYY-MM-DD HH:mm:ss");
 }
 
 function dialogue(replUserId, input, callback) {
@@ -73,7 +72,7 @@ function dialogue(replUserId, input, callback) {
 		json: body
 	};
 	request(options, (err, res, json) => {
-		console.log(err, json);
+		// console.log(err, json);
 		if (err) {
 			callback(err);
 			return;
@@ -88,14 +87,19 @@ function dialogue(replUserId, input, callback) {
 }
 
 module.exports = (robot) => {
+	const REMOVE_REG_EXP = new RegExp(`@?${robot.name}:?\\s*`, 'g');
+
 	robot.respond(/(\S+)/i, function(msg) {
 		let name = msg.message.user.name;
 		let message = msg.message.text;
-		message = message.replace(/\@[a-zA-Z\.\-\_;:\<\>]+/g, '')
-		console.log(`received "${message}" from @$name`);
+		message = message.replace(REMOVE_REG_EXP, '')
+
+		robot.logger.info(`received "${message}" from @${name}`);
+
 		if (name in replUserIdMap) {
 			dialogue(replUserIdMap[name], message, (err, output) => {
 				if (err) {
+					robot.logger.error(`dialogue failed ${err}`);
 					msg.send(`error: ${err}`);
 				} else {
 					msg.send(output);
@@ -103,10 +107,15 @@ module.exports = (robot) => {
 			});
 		} else {
 			register((err, replUserId) => {
+				if (err) {
+					robot.logger.error(`registration failed ${err}`);
+					msg.send(`registration failed ${err}`);
+				}
 				replUserIdMap[name] = replUserId;
 				dialogue(replUserIdMap[name], message, (err, output) => {
 					if (err) {
-						msg.send(`error: ${err}`);
+						robot.logger.error(`dialogue failed ${err}`);
+						msg.send(`dialogue failed ${err}`);
 					} else {
 						msg.send(output);
 					}
